@@ -60,7 +60,7 @@ The key innovations:
 ## Architecture
 
 <div align="center">
-<img src="docs/architecture.svg" alt="Hopf-GraphVAE Architecture" width="900"/>
+<img src="docs/architecture_dark.svg" alt="Hopf-GraphVAE Architecture" width="900"/>
 </div>
 
 ### Node Features (11-dimensional per ROI)
