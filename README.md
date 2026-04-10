@@ -153,8 +153,8 @@ Total parameters:                            6,071
 │   ├── input_proj (masked residual, 11→32):   352
 │   └── physics_head (32→16→1):                545
 └── Trainable GAE:                             586  (10%)
-    ├── fc_z (32→6):                            198
-    ├── linear_decoder (6→7):                    49
+    ├── fc_z (32→6):                           198
+    ├── linear_decoder (6→7):                   49
     └── edge_decoders (3 × MLP 12→8→1):        339
 
 Coupled architecture: 3.2× fewer trainable params than decoupled (586 vs 1,882)
