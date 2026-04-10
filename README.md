@@ -179,7 +179,7 @@ The HC train/test split is **by subject** (not session) to prevent leakage. HC h
 
 ## Key Design Decisions
 
-**Coupled edge decoders on $𝐳$ (not $𝐡$)** — Edge decoders receive the trainable latent $𝐳$ via concatenation $[𝐳_i \| 𝐳_j]$, creating a gradient path: ∇ℒ_edge → MLP_r → [𝐳_i, 𝐳_j] → W_z. Three independent observations confirm functional coupling: (1) 10% improvement in HC–MDD separation ($d = 2.75 \to 3.02$) with 3.2× fewer trainable parameters; (2) inverted-U dose-response curve for $\lambda_\text{edge}$ peaking at 0.50; (3) optimal $d_z$ shifts from 4 (decoupled) to 6 (coupled). ROI ranking correlation between coupled and decoupled: $\rho = 0.952$.
+**Coupled edge decoders on $𝐳$ (not $𝐡$)** — Edge decoders receive the trainable latent $𝐳$ via concatenation $[𝐳_i \| 𝐳_j]$, creating a gradient path: $∇ℒ_edge → MLP_r → [𝐳_i, 𝐳_j] → W_z$. Three independent observations confirm functional coupling: (1) 10% improvement in HC–MDD separation ($d = 2.75 \to 3.02$) with 3.2× fewer trainable parameters; (2) inverted-U dose-response curve for $\lambda_\text{edge}$ peaking at 0.50; (3) optimal $d_z$ shifts from 4 (decoupled) to 6 (coupled). ROI ranking correlation between coupled and decoupled: $\rho = 0.952$.
 
 **Physics-only scoring (not Fisher LDA)** — An earlier design used Fisher LDA to weight anomaly score components, but this introduced circularity: scoring weights were informed by the labels being tested, inflating effect sizes by ~2.8×. The physics-only score is strictly label-free.
 
