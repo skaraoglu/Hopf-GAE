@@ -339,6 +339,6 @@ If you use this architecture or build on this work, please cite:
 
 <div align="center">
 
-*Built with [PyTorch Geometric](https://pyg.org/) · Node dynamics from  [SL-UKF_Neural_Criticality_MDD](https://github.com/skaraoglu/SL-UKF_Neural_Criticality_MDD) \&  · [SL-UKF_Neural_Criticality_MDDvsHC](https://github.com/skaraoglu/SL-UKF_Neural_Criticality_MDDvsHC)· Parcellation: [Schaefer 2018](https://github.com/ThomasYeoLab/CBIG/tree/master/stable_projects/brain_parcellation/Schaefer2018_LocalGlobal) + [Melbourne Subcortex](https://github.com/yetianmed/subcortex)*
+*Built with [PyTorch Geometric](https://pyg.org/) · Node dynamics from  [SL-UKF_Neural_Criticality_MDD](https://github.com/skaraoglu/SL-UKF_Neural_Criticality_MDD) · [SL-UKF_Neural_Criticality_MDDvsHC](https://github.com/skaraoglu/SL-UKF_Neural_Criticality_MDDvsHC)· Parcellation: [Schaefer 2018](https://github.com/ThomasYeoLab/CBIG/tree/master/stable_projects/brain_parcellation/Schaefer2018_LocalGlobal) + [Melbourne Subcortex](https://github.com/yetianmed/subcortex)*
 
 </div>
