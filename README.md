@@ -17,7 +17,7 @@ This repository contains the **Hopf-GAE**, a physics-informed deep learning arch
 
 The key innovations:
 
-1. **Biophysically grounded node features** — every node carries the per-region bifurcation parameter $a_j$, natural frequency $\omega_j$, and goodness-of-fit $\chi^2_j$ estimated by the Stuart-Landau / Hopf bifurcation framework via the [MDD-fMRI_with_SL-UKF](https://github.com/skaraoglu/MDD-fMRI_with_SL-UKF) \&  · [MDDvsHC-NeuralCriticality-SL-UKF](https://github.com/skaraoglu/MDDvsHC-NeuralCriticality-SL-UKF) pipeline, plus Yeo 7-network one-hot encodings (11 features per ROI). To our knowledge, the first use of biophysically estimated dynamical parameters as node features in any GNN for fMRI.
+1. **Biophysically grounded node features** — every node carries the per-region bifurcation parameter $a_j$, natural frequency $\omega_j$, and goodness-of-fit $\chi^2_j$ estimated by the Stuart-Landau / Hopf bifurcation framework via the [SL-UKF_Neural_Criticality_MDD](https://github.com/skaraoglu/SL-UKF_Neural_Criticality_MDD) \&  · [SL-UKF_Neural_Criticality_MDDvsHC](https://github.com/skaraoglu/SL-UKF_Neural_Criticality_MDDvsHC) pipeline, plus Yeo 7-network one-hot encodings (11 features per ROI). To our knowledge, the first use of biophysically estimated dynamical parameters as node features in any GNN for fMRI.
 
 2. **Multi-relational graph attention** — three edge types (PLV phase synchrony, MVAR Granger causality, SC structural connectivity) with learned per-relation attention weights and edge-attribute-aware attention.
 
@@ -71,7 +71,7 @@ The key innovations:
 
 | Feature | Dim | Source | Meaning |
 |---------|-----|--------|---------|
-| $a_j$ | 1 | [MDD-fMRI_with_SL-UKF](https://github.com/skaraoglu/MDD-fMRI_with_SL-UKF) | Bifurcation parameter — distance from critical point |
+| $a_j$ | 1 | [SL-UKF_Neural_Criticality_MDD](https://github.com/skaraoglu/SL-UKF_Neural_Criticality_MDD) | Bifurcation parameter — distance from critical point |
 | $\omega_j$ | 1 | Hilbert phase | Natural oscillation frequency (Hz) |
 | $\chi^2_j$ | 1 | UKF fit | Goodness-of-fit (model–data agreement) |
 | Network one-hot | 8 | Yeo 7 + Subcortical | Functional network membership |
@@ -265,7 +265,7 @@ Coupled architecture achieves higher separation with 3.2× fewer trainable param
 
 ## Upstream Dependencies
 
-The Hopf-GAE consumes outputs from the R biophysical pipeline ([MDD-fMRI_with_SL-UKF](https://github.com/skaraoglu/MDD-fMRI_with_SL-UKF) \&  · [MDDvsHC-NeuralCriticality-SL-UKF](https://github.com/skaraoglu/MDDvsHC-NeuralCriticality-SL-UKF)):
+The Hopf-GAE consumes outputs from the R biophysical pipeline ([SL-UKF_Neural_Criticality_MDD](https://github.com/skaraoglu/SL-UKF_Neural_Criticality_MDD) \&  · [SL-UKF_Neural_Criticality_MDDvsHC](https://github.com/skaraoglu/SL-UKF_Neural_Criticality_MDDvsHC)):
 
 | Input | File | Format |
 |-------|------|--------|
@@ -339,6 +339,6 @@ If you use this architecture or build on this work, please cite:
 
 <div align="center">
 
-*Built with [PyTorch Geometric](https://pyg.org/) · Node dynamics from  [MDD-fMRI_with_SL-UKF](https://github.com/skaraoglu/MDD-fMRI_with_SL-UKF) \&  · [MDDvsHC-NeuralCriticality-SL-UKF](https://github.com/skaraoglu/MDDvsHC-NeuralCriticality-SL-UKF)· Parcellation: [Schaefer 2018](https://github.com/ThomasYeoLab/CBIG/tree/master/stable_projects/brain_parcellation/Schaefer2018_LocalGlobal) + [Melbourne Subcortex](https://github.com/yetianmed/subcortex)*
+*Built with [PyTorch Geometric](https://pyg.org/) · Node dynamics from  [SL-UKF_Neural_Criticality_MDD](https://github.com/skaraoglu/SL-UKF_Neural_Criticality_MDD) \&  · [SL-UKF_Neural_Criticality_MDDvsHC](https://github.com/skaraoglu/SL-UKF_Neural_Criticality_MDDvsHC)· Parcellation: [Schaefer 2018](https://github.com/ThomasYeoLab/CBIG/tree/master/stable_projects/brain_parcellation/Schaefer2018_LocalGlobal) + [Melbourne Subcortex](https://github.com/yetianmed/subcortex)*
 
 </div>
