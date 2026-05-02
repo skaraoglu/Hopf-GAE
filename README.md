@@ -64,7 +64,7 @@ The key innovations:
 ## Architecture
 
 <div align="center">
-<img src="docs/architecture_dark.png" alt="Hopf-GAE Architecture" width="500"/>
+<img src="docs/architecture_dark.png" alt="Hopf-GAE Architecture" width="600"/>
 </div>
 
 ### Node Features (11-dimensional per ROI)
