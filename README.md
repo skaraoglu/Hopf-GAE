@@ -61,8 +61,8 @@ Read through the lens of the broader thesis, this is the reliability side of a *
 <td width="50%">
 
 **Acquisition**
-- MDD: GE Discovery MR750 3T, TR = 2.0 s, TE = 30 ms, $1.875 \times 1.875 \times 3.4$ mm, 260 volumes
-- HC: GE Discovery MR750 3T, TR = 2.0 s, TE = 30 ms, $3.4 \times 3.4 \times 3.4$ mm, 300 volumes
+- MDD: GE Discovery MR750 3T, TR = 2.0 s, TE = 30 ms, 1.875 x 1.875 x 3.4 mm, 260 volumes
+- HC: GE Discovery MR750 3T, TR = 2.0 s, TE = 30 ms, isometric 3.4 mm, 300 volumes
 - Same scanner model for both cohorts; the genuine acquisition differences are voxel geometry, volume count, and preprocessing
 - Resting-state pre/post-NF (MDD); 10 resting-state sessions (HC)
 
