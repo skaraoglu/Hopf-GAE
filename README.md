@@ -1,26 +1,17 @@
 <div align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/hero_mdd_vs_hc_circuit.png">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/hopf_arch_d7v2(2).png">
   <img alt="Neural Criticality in MDD vs Healthy Control"
-       src="assets/hero_mdd_vs_hc_circuit.png" width="700">
+       src="docs/hopf_arch_d7v2(2).png" width="1200">
 </picture>
 
-# Same Brain, Different Neural Criticality
+# Hopf-GAE
+## Physics-Informed Graph Neural Network for Normative Brain Dynamics
 
-### How Estimation Approach Shapes the Stuart-Landau Bifurcation Parameter in Health and Depression
+### Anomaly Detection in Major Depressive Disorder via Stuart-Landau–Grounded Denoising Graph Autoencoder with Coupled Edge-Node Reconstruction
 
-[![R](https://img.shields.io/badge/R-≥4.2-276DC3?logo=r&logoColor=white)](https://www.r-project.org/)
-[![Python](https://img.shields.io/badge/Python-≥3.9-3776AB?logo=python&logoColor=white)](https://www.python.org/)
-[![License](https://img.shields.io/badge/License-Academic_Use-lightgrey)]()
-[![Status](https://img.shields.io/badge/Status-Analysis_Complete-brightgreen)]()
-[![Atlas](https://img.shields.io/badge/Parcellation-216_ROI-blue)]()
-[![Subjects](https://img.shields.io/badge/N-49_(30_HC_+_19_MDD)-orange)]()
-
----
-
-*If the bifurcation parameter depends on how you estimate it,  
-what is each approach actually measuring — and does depression change it?*
+[![Python](https://img.shields.io/badge/Python-≥3.9-3776AB?logo=python&logoColor=white)](https://www.python.org/) [![PyTorch](https://img.shields.io/badge/PyTorch-≥2.0-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/) [![PyG](https://img.shields.io/badge/PyTorch_Geometric-≥2.4-3C2179?logo=pyg&logoColor=white)](https://pyg.org/) [![License](https://img.shields.io/badge/License-Academic_Use-lightgrey)]() [![Status](https://img.shields.io/badge/Status-Final-brightgreen)]() [![Atlas](https://img.shields.io/badge/Parcellation-216_ROI-blue)]() [![Architecture](https://img.shields.io/badge/Params-6%2C071_total-orange)]()
 
 </div>
 
@@ -28,51 +19,47 @@ what is each approach actually measuring — and does depression change it?*
 
 ## Overview
 
-This repository contains the analysis pipeline for a **cross-condition comparison** of whole-brain dynamics between healthy controls (HC) and unmedicated Major Depressive Disorder (MDD), using three independent estimation approaches applied to the **Stuart-Landau oscillator** — the normal form of a supercritical Hopf bifurcation.
+This repository contains the **Hopf-GAE**, a physics-informed deep learning architecture that detects depression-related dynamical abnormalities without ever training on depressed brains. Rather than framing MDD detection as binary classification (which fails at $n = 19$), the model learns a **normative manifold** of healthy brain dynamics and scores MDD subjects by how far they deviate from it.
 
-A prior study established that MDD resting-state dynamics are deeply subcritical ($a \approx -0.29$) and that amygdala neurofeedback shifts the bifurcation parameter within-subject ($d = -0.835$). This study asks two follow-up questions: (1) do HC dynamics occupy a different regime, and (2) do different estimation approaches agree on where that regime lies?
+The key innovations:
 
-The central findings are threefold. First, all three approaches converge on a **whole-brain null** — HC and MDD are indistinguishable at the global level. Second, the approaches place the dynamical operating point at **systematically different locations**: from deeply subcritical (UKF: $a \approx -0.26$) through moderately subcritical (spectral: $a \approx -0.16$; SC-constrained FC-matching: $a \approx -0.07$), demonstrating that the numerical value is approach-dependent even when the qualitative conclusions converge. Third, **circuit-specific analysis** reveals a significant cluster of DMN/limbic regions ($p = 0.012$) where the criticality-deficit hypothesis holds locally, with the right amygdala showing an opposite trend consistent with hyperreactivity.
+1. **Biophysically grounded node features** — every node carries the per-region bifurcation parameter $a_j$, natural frequency $\omega_j$, and goodness-of-fit $\chi^2_j$ estimated by the Stuart-Landau / Hopf bifurcation framework via the [SL-UKF_Neural_Criticality_MDD](https://github.com/skaraoglu/SL-UKF_Neural_Criticality_MDD) \&  · [SL-UKF_Neural_Criticality_MDDvsHC](https://github.com/skaraoglu/SL-UKF_Neural_Criticality_MDDvsHC) pipeline, plus Yeo 7-network one-hot encodings (11 features per ROI). To our knowledge, the first use of biophysically estimated dynamical parameters as node features in any GNN for fMRI.
 
-Read through the lens of the broader thesis, this is the reliability side of a *structure-resolution* approach. Because the absolute operating point is contingent on the estimation framework, the conclusions that can be trusted are those that survive substitution of that framework: the qualitative subcriticality, the whole-brain null between conditions, and the *direction* (not the magnitude) of the treatment mean-shift, which the two time-domain approaches recover but the spatial-correlation approach does not.
+2. **Multi-relational graph attention** — three edge types (PLV phase synchrony, MVAR Granger causality, SC structural connectivity) with learned per-relation attention weights and edge-attribute-aware attention.
+
+3. **Coupled edge-node bottleneck** — edge decoders operate on the trainable latent $𝐳$ via concatenation $[𝐳_i \| 𝐳_j]$, creating a gradient path from the edge loss through the shared bottleneck into the node reconstruction pathway. When decoupled (edge decoders on frozen $𝐡$), the connectivity branch has identically zero effect on the anomaly score.
+
+4. **Physics-only scoring** — anomaly scores use reconstruction error on $(a_j, \omega_j, \chi^2_j)$ exclusively. Four additional connectivity-derived features shape $𝐳$ during training but are excluded from the score, preventing connectivity-derived features from diluting the dynamical anomaly signal.
+
+5. **Denoising graph autoencoder** — Gaussian noise injection ($\sigma = 0.1$) on encoder input and dropout ($p = 0.3$) on the latent code replace the variational bottleneck, which collapsed in all tested configurations due to low within-HC variance of bifurcation parameters.
 
 ---
 
-## Study Design
+## The $n = 19$ Problem
 
 <table>
 <tr>
 <td width="50%">
 
-**Healthy Controls — HNU1 Dataset**
-- 30 subjects, 10 sessions each (~3-day intervals)
-- Consortium for Reliability and Reproducibility (CoRR)
-- Hangzhou Normal University, 3T GE Discovery MR750
-- Multi-session averaging for trait-level estimates
-
-**MDD Cohort — Neurofeedback Dataset**
-- 19 paired subjects (from 23 enrolled)
-- Unmedicated MDD (DSM-IV-TR)
-- Single-blind, sham-controlled rtfMRI-NF
-- Active ($n = 11$): left amygdala upregulation
-- Sham ($n = 8$): left intraparietal sulcus
+**Classification (insufficient data)**
+- Binary classification: active NF vs. sham
+- Trained on 18 subjects per fold
+- Memorized subject identity → Cohen's $d$ of $-6$ to $-11$
+- Implausibly large vs. UKF reference $d = -0.835$
+- **Verdict:** classification fails at this sample size
 
 </td>
 <td width="50%">
 
-**Acquisition**
-- MDD: GE Discovery MR750 3T, TR = 2.0 s, TE = 30 ms, 1.875 x 1.875 x 3.4 mm, 260 volumes
-- HC: GE Discovery MR750 3T, TR = 2.0 s, TE = 30 ms, isometric 3.4 mm, 300 volumes
-- Same scanner model for both cohorts; the genuine acquisition differences are voxel geometry, volume count, and preprocessing
-- Resting-state pre/post-NF (MDD); 10 resting-state sessions (HC)
-
-**Parcellation**
-- Primary: Schaefer-200 + Melbourne-16 subcortical (216 ROIs)
-- Validation: Harvard-Oxford 110-ROI (adaptive sphere radius)
-
-**Preprocessing**
-- MDD: AFNI `afni_proc.py`, 17-regressor confound model incl. RETROICOR
-- HC: LIBR-matched pipeline (fMRIPrep + confound regression, no RETROICOR)
+**Normative anomaly detection (this work)**
+- Train exclusively on healthy controls ($n = 295$ sessions)
+- MDD subjects are test-only — never seen during training
+- Overfitting eliminated by construction
+- HC vs MDD: $d = +3.02$, $p = 7.3 \times 10^{-10}$
+- All 4 intervention scales survive FDR correction
+- HC holdout false positive rate: 0/36 (0.0%)
+- Seed robustness: CV = 3.9% across 10 initializations
+- **Verdict:** "how far from healthy?" not "which group?"
 
 </td>
 </tr>
@@ -80,177 +67,218 @@ Read through the lens of the broader thesis, this is the reliability side of a *
 
 ---
 
-## Three Estimation Approaches
+## Architecture
 
-A terminological note: these are "estimation approaches" rather than "estimators." Each defines and measures a different dynamical property of the data, albeit one that maps onto the control parameter $a$ within the Stuart-Landau framework.
+<div align="center">
+<img src="docs/hopf_arch_d6v5.png" alt="Hopf-GAE Architecture" width="900"/>
+</div>
 
-| Approach | Domain | What It Estimates | HC $a$ | MDD $a$ |
-|----------|--------|-------------------|--------|---------|
-| **UKF State-Space** | Time | Per-TR decay rate via Unscented Kalman Filter | $-0.259$ | $-0.267$ |
-| **Spectral Lorentzian NLS** | Frequency | BOLD power spectrum peak width | $-0.158$ | $-0.150$ |
-| **SC-FC Matching** | Spatial correlation | Coupled SL network regime maximizing FC correlation | $-0.073$ | $-0.030$ |
-| *Deco et al. 2017 (DTI-SC)* | *Spatial correlation* | *Full framework with tractography + hemodynamics* | $\approx -0.02$ | — |
+### Node Features (11-dimensional per ROI)
 
-The Stuart-Landau equation in complex form:
+| Feature | Dim | Source | Meaning |
+|---------|-----|--------|---------|
+| $a_j$ | 1 | [SL-UKF_Neural_Criticality_MDD](https://github.com/skaraoglu/SL-UKF_Neural_Criticality_MDD) | Bifurcation parameter — distance from critical point |
+| $\omega_j$ | 1 | Hilbert phase | Natural oscillation frequency (Hz) |
+| $\chi^2_j$ | 1 | UKF fit | Goodness-of-fit (model–data agreement) |
+| Network one-hot | 8 | Yeo 7 + Subcortical | Functional network membership |
 
-$$\dot{z} = (a + i\omega)\,z \ - \ |z|^2\,z \ + \ \sigma\,\eta(t)$$
+### Reconstruction Targets (7-dimensional per ROI)
 
-The SC-FC matching uses a distance-based structural connectivity approximation ($SC_{ij} = \exp(-d_{ij}/\lambda)$, $\lambda = 40$ mm) rather than subject-specific tractography, with fixed global coupling $G = 0.5$ and no hemodynamic forward model. The remaining gap between our SC-FC estimate ($a \approx -0.07$) and the Deco reference ($a \approx -0.02$) likely reflects these simplifications.
+| Feature | Weight | Source | Enters Score? |
+|---------|--------|--------|---------------|
+| $a_j$ | 2.0 | UKF | **Yes** |
+| $\omega_j$ | 1.0 | Hilbert | **Yes** |
+| $\chi^2_j$ | 1.0 | UKF fit | **Yes** |
+| PLV node strength | 0.5 | Edge aggregation | No — shapes $𝐳$ only |
+| MVAR in-strength | 0.5 | Edge aggregation | No — shapes $𝐳$ only |
+| MVAR out-strength | 0.5 | Edge aggregation | No — shapes $𝐳$ only |
+| Within-network PLV | 0.5 | Edge aggregation | No — shapes $𝐳$ only |
+
+### Edge Types (3 relations)
+
+| Relation | Type | Source | Encoder Weight (Conv₁) |
+|----------|------|--------|------------------------|
+| **PLV** | Undirected | Phase Locking Value | 0.76 |
+| **SC** | Undirected | $\exp(-d/40\text{mm})$ | 0.19 |
+| **MVAR** | Directed | Lasso-MVAR | 0.05 |
 
 ---
 
-## Pipeline Architecture
+## Model Components
+
+### Multi-Relational Graph Attention Convolution
+
+Each GAT layer maintains separate learnable projections $W_r$ and attention vectors $𝐚_r$ for each edge relation $r \in \{\text{PLV}, \text{MVAR}, \text{SC}\}$, with edge attributes incorporated into the attention computation:
+
+$$h_j^{(l+1)} = \text{ELU}\!\left( \sum_{r \in R} \alpha_r \sum_{i \in \mathcal{N}_r(j)} \alpha_{ij}^{(r)} \, w_{ij}^{(r)} \, W_r \, h_i^{(l)} \right)$$
+
+where $\alpha_r$ are learned relation-importance weights (softmax-normalized).
+
+### Frozen Encoder (5,485 parameters)
+
+Two multi-relational GAT layers ($11 \to 32 \to 32$) with a masked residual connection produce per-ROI embeddings $𝐡_j \in ℝ^{32}$. The masked residual projects the input through `input_proj` ($11 \to 32$) but **zeros the physics features** $(a_j, \omega_j, \chi^2_j)$ — forcing the encoder to reconstruct dynamics through graph message passing rather than shortcutting via identity. A physics head ($32 \to 16 \to 1$) validates the encoder during pre-training ($R^2_{\text{graph}} = 0.964$, $R^2_{\text{roi}} = 0.616$). The encoder is frozen after pre-training.
+
+### Trainable Denoising GAE (586 parameters)
+
+**Denoising:** During training, Gaussian noise ($\sigma = 0.1$) is injected on the encoder input $𝐱$, preventing the bottleneck from learning identity-like mappings.
+
+**Node path:** Deterministic projection $𝐡_j \to z_j \in ℝ^6$ → dropout ($p = 0.3$) → linear decoder ($6 \to 7$) → reconstructed $(a, \omega, \chi^2, s_\text{PLV}, s_\text{MVAR-in}, s_\text{MVAR-out}, \text{PLV}_\text{within})$.
+
+**Edge path (coupled):** Three MLP edge decoders predict edge existence from $[𝐳_i \| 𝐳_j]$ for PLV, SC, and MVAR independently. Each MLP is $12 \to 8 \to 1$ with ELU activation. Concatenation (not absolute difference) is used because directed edges (MVAR) require asymmetric input.
+
+**Graph-level loss:** Per-graph mean and standard deviation of the bifurcation parameter $a$ are reconstructed, ensuring the decoder preserves population-level distributional properties.
+
+| Component | Shape | Parameters | Status |
+|-----------|-------|------------|--------|
+| $f_z$ (bottleneck) | $32 \to 6$ | 198 | Trainable |
+| Linear decoder | $6 \to 7$ | 49 | Trainable |
+| Edge decoders (PLV, SC, MVAR) | $12 \to 8 \to 1$ each | 339 | Trainable |
+| **Total trainable** | | **586** | |
+
+### Physics-Only Anomaly Scoring
+
+$$S = \frac{1}{N} \sum_{j=1}^{N} \left[ 2(a_j - \hat{a}_j)^2 + (\omega_j - \hat{\omega}_j)^2 + (\chi^2_j - \hat{\chi}^2_j)^2 \right]$$
+
+z-scored against HC norms: $S_z = (S - \mu_\text{HC}) / \sigma_\text{HC}$. No component of the scoring function is derived from or optimized against clinical group membership.
+
+**Loss function (GAE training):**
+
+$$\mathcal{L} = \underbrace{\sum_{f} w_f (x_f - \hat{x}_f)^2}_{\text{feature-weighted node recon}} + \; \lambda_g \cdot \underbrace{(\text{MSE}(\mu_a, \hat{\mu}_a) + \text{MSE}(\sigma_a, \hat{\sigma}_a))}\_{\text{graph-level } a \text{ statistics}} + \; \lambda_e \cdot \underbrace{\sum_{r} \text{BCE}(\hat{A}_r, A_r)}_{\text{3-relation edge recon}}$$
+
+with $\lambda_g = 0.1$, $\lambda_e = 0.5$.
+
+---
+
+## Parameter Budget
 
 ```
-┌──────────────────────────────────────────────────────────────────────────┐
-│                     parcellate_hc_hnu1_v3.ipynb                          │
-│  HC NIfTI  ──▸  fMRIPrep + confound regression  ──▸  Atlas ROI CSVs      │
-└──────────────────────────────────┬───────────────────────────────────────┘
-                                   │
-                                   ▼
-┌──────────────────────────────────────────────────────────────────────────┐
-│                    MDD-HC_analysis_v4.ipynb  (R kernel)                  │
-│                                                                          │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌───────────────────────┐   │
-│  │  Path 1: UKF     │  │  Path 2: Spectral│  │  Path 3: SC-FC        │   │
-│  │  Multi-session   │  │  Lorentzian NLS  │  │  Distance-based SC    │   │
-│  │  averaging       │  │  peak-width fit  │  │  + FC correlation     │   │
-│  │  (71,928 fits)   │  │                  │  │  optim (216 × 216)    │   │
-│  └────────┬─────────┘  └────────┬─────────┘  └──────────┬────────────┘   │
-│           │                     │                       │                │
-│           ▼                     ▼                       ▼                │
-│  ┌──────────────────────────────────────────────────────────────────┐    │
-│  │  Cross-condition: HC vs MDD  ·  Cross-method comparison          │    │
-│  │  Sensitivity power analysis  ·  R_SCALE sensitivity              │    │
-│  │  Depression-circuit permutation test (69 ROIs)                   │    │
-│  │  Treatment replication across all three approaches               │    │
-│  │  Test-retest reliability (ICC, split-half, session curve)        │    │
-│  └──────────────────────────────────────────────────────────────────┘    │
-└──────────────────────────────────────────────────────────────────────────┘
-                                   │
-                                   ▼
-┌──────────────────────────────────────────────────────────────────────────┐
-│                    ch5_supplement_corrected.ipynb                        │
-│  NF treatment effects  ──▸  Corrected group labels (participants.tsv)    │
-│  SC-FC circuit analysis ──▸  Full 216-ROI atlas with dual FC masks       │
-└──────────────────────────────────────────────────────────────────────────┘
+Total parameters:                            6,071
+├── Frozen encoder:                          5,485  (90%)
+│   ├── conv1 (3-relation GAT, 11→32):       1,286
+│   ├── conv2 (3-relation GAT, 32→32):       3,302
+│   ├── input_proj (masked residual, 11→32):   352
+│   └── physics_head (32→16→1):                545
+└── Trainable GAE:                             586  (10%)
+    ├── fc_z (32→6):                           198
+    ├── linear_decoder (6→7):                   49
+    └── edge_decoders (3 × MLP 12→8→1):        339
+
+Coupled architecture: 3.2× fewer trainable params than decoupled (586 vs 1,882)
 ```
+
+---
+
+## Data Isolation
+
+```
+┌────────────┬─────────────────┬──────────────┬──────────────┬──────────────┬──────────────┐
+│  Synthetic │    HC train     │  HC holdout  │   HC test    │  MDD rest1   │  MDD rest2   │
+│  n = 200   │ 24 subj (199s)  │ ~5 subj (36s)│ 6 subj (60s) │   19 subj    │   18 subj    │
+│  Stage 1   │    Stage 2      │  Test only   │  Test only   │  Test only   │  Test only   │
+└────────────┴─────────────────┴──────────────┴──────────────┴──────────────┴──────────────┘
+ Synthetic + HC train = train  |  HC holdout + HC test + MDD = never trained on
+```
+
+The HC train/test split is **by subject** (not session) to prevent leakage. HC holdout subjects (~15%) provide an unbiased false positive rate estimate (0/36 = 0.0%). MDD subjects are never seen during any training stage. HC train vs. test overfitting check: $p = 0.875$.
+
+---
+
+## Key Design Decisions
+
+**Coupled edge decoders on $𝐳$ (not $𝐡$)** — Edge decoders receive the trainable latent $𝐳$ via concatenation $[𝐳_i \| 𝐳_j]$, creating a gradient path: $∇ℒ_{edge} → MLP_r → [𝐳_i, 𝐳_j] → W_z$. Three independent observations confirm functional coupling: (1) 10% improvement in HC–MDD separation ($d = 2.75 \to 3.02$) with 3.2× fewer trainable parameters; (2) inverted-U dose-response curve for $\lambda_\text{edge}$ peaking at 0.50; (3) optimal $d_z$ shifts from 4 (decoupled) to 6 (coupled). ROI ranking correlation between coupled and decoupled: $\rho = 0.952$.
+
+**Physics-only scoring (not Fisher LDA)** — An earlier design used Fisher LDA to weight anomaly score components, but this introduced circularity: scoring weights were informed by the labels being tested, inflating effect sizes by ~2.8×. The physics-only score is strictly label-free.
+
+**Denoising autoencoder (not variational)** — The variational bottleneck ($\mu, \log\sigma^2$, reparameterization, KL divergence) was tested across multiple architectural configurations. KL collapsed to negligible values in all cases because within-HC variance of $(a, \omega, \chi^2)$ is too low for variational regularization.
+
+**Linear decoder (49 parameters)** — An MLP decoder can learn a mean-output shortcut: memorize the HC population mean and output it regardless of $z$, achieving low reconstruction loss without $z$ carrying per-ROI information. A linear layer cannot learn this shortcut — it must use $z$ to reconstruct per-ROI variation.
+
+**Expanded reconstruction targets (7 features)** — Reconstructing only $(a, \omega, \chi^2)$ allows the bottleneck to ignore connectivity structure. Adding PLV/MVAR-derived features forces $z$ to encode both dynamical and connectivity information per ROI. Only the physics features enter the anomaly score.
+
+**Node-level (not graph-level) bottleneck** — Graph-level pooling into a single $z$ vector could be bypassed by the frozen encoder embeddings. Node-level bottleneck gives each ROI its own $z_j$, forcing per-ROI dynamical information through the bottleneck.
+
+**Concatenation $[𝐳_i \| 𝐳_j]$ (not absolute difference)** — Directed edges (MVAR) require asymmetric input: $[𝐳_i \| 𝐳_j] \neq [𝐳_j \| 𝐳_i]$. Absolute difference would destroy directionality information.
+
+**Feature-weighted reconstruction** — Weights $[2, 1, 1, 0.5, 0.5, 0.5, 0.5]$ on the 7 reconstruction targets emphasize the physics features while still requiring accurate connectivity reconstruction.
+
+**Outlier threshold: HC mean $+ 6 \times$ SD** — Sweeping from 3× to 10× revealed that aggressive thresholds exclude the majority of MDD subjects, while lenient thresholds exclude none. 6× SD removes only genuinely extreme values (1 subject: SA_E4051) while preserving maximum sample size.
 
 ---
 
 ## Key Results
 
-<table>
-<tr>
-<td width="50%">
+| Metric | Value | 95% CI | UKF Reference |
+|--------|-------|--------|---------------|
+| HC vs MDD separation | $d = +3.02$, $p = 7.3 \times 10^{-10}$ | — | — |
+| Permutation null (10,000) | $p < 0.0001$ | — | — |
+| HC holdout FP rate | 0/36 (0.0%) | — | — |
+| HC holdout vs MDD | $d = +2.28$ | — | — |
+| Overfitting check | $p = 0.875$ | — | — |
+| Seed robustness (10 runs) | $d = 2.91 \pm 0.12$ (CV 3.9%) | — | — |
+| Whole-brain intervention | $d = +1.31$, FDR $p = 0.043^*$ | $[0.38, 2.89]$ | $d = -0.84$, $p = 0.080$ |
+| Circuit intervention | $d = +1.19$, FDR $p = 0.050^*$ | $[0.33, 2.58]$ | $d = -1.09$, $p = 0.027$ |
+| Limbic intervention | $d = +1.32$, FDR $p = 0.043^*$ | $[0.55, 2.43]$ | — |
+| Subcortical intervention | $d = +1.61$, FDR $p = 0.042^*$ | $[0.57, 3.98]$ | — |
+| Circuit enrichment (top-10) | 2.19× (7/10), hypergeom $p = 0.013$ | — | — |
+| Circuit enrichment (top-15) | 2.30× (11/15), hypergeom $p = 0.0008$ | — | — |
+| Circuit vs non-circuit | $d = +0.37$, $p = 0.023$ | — | — |
+| Heterogeneity (raw $a$, whole-brain) | $d = +1.33$, $p = 0.017$ | — | $d = +1.01$, $p = 0.042$ |
+| Heterogeneity (raw $a$, circuit) | $d = +1.44$, $p = 0.008$ | — | $d = +1.01$, $p = 0.042$ |
+| #1 anomalous ROI | RH Default PFCdPFCm | — | Converges with Ch. 5 cluster |
+| #1 anomalous network | Limbic | — | — |
 
-**Cross-Condition (HC vs MDD)**
-- UKF: $d = 0.13$, $p = 0.68$ (null)
-- Spectral: $d = -0.14$, $p = 0.64$ (null)
-- SC-FC: $d = -0.33$, $p = 0.25$ (null)
-- TOST at $d < 0.50$: $p = 0.13$ (not equivalent — asymmetric precision)
-- All 8 network-level tests: Bonferroni $p > 1.0$
-- Sensitivity: minimum detectable effect at 80% power is $d = 0.94$
+All four intervention scales survive Benjamini-Hochberg FDR correction. Active group shows approximately stable anomaly (AWAY from HC), sham moves **toward** HC (decreased anomaly). Post-exclusion analysis: $n = 18$ MDD subjects (11 active, 7 sham).
 
-**Method Gradient**
-- UKF: $a \approx -0.26$ (deeply subcritical)
-- Spectral: $a \approx -0.16$ (moderately subcritical)
-- SC-FC: $a \approx -0.07$ (mildly subcritical)
-- Cross-method $r$ = 0.37 (HC), 0.53 (MDD) — 15-25% shared variance
+### Per-Feature Decomposition
 
-</td>
-<td width="50%">
+| Feature | Cohen's $d$ | Direction |
+|---------|-------------|-----------|
+| $\chi^2$ (model fit) | +6.07 | MDD worse reconstructed |
+| $a$ (bifurcation) | +5.91 | MDD worse reconstructed |
+| MVAR in-strength | +5.17 | MDD worse reconstructed |
+| MVAR out-strength | +4.93 | MDD worse reconstructed |
+| $\omega$ (frequency) | −1.76 | MDD *better* reconstructed |
+| PLV within-network | +1.43 | MDD worse reconstructed |
+| PLV node strength | +1.29 | MDD worse reconstructed |
 
-**Treatment Effects (Corrected Group Labels)**
-- UKF whole-brain: $d = -0.835$, $p = 0.080$
-- UKF depression circuit: $d = -1.094$, $p = 0.027$ ✱
-- Spectral circuit: $d = -0.606$, $p = 0.220$
-- SC-FC whole-brain: $d = -0.034$, $p = 0.946$
-- SC-FC circuit: $d = +0.024$, $p = 0.959$
+The reversed sign on $\omega$ is theoretically predicted: MDD alters distance from the bifurcation point without necessarily shifting intrinsic oscillation frequency.
 
-**Circuit-Specific Analysis (69 ROIs)**
-- Permutation cluster test: $p = 0.012$ (5 ROIs with $d > 0.65$)
-- Top ROIs: RH Default Temporal 2 ($d = +0.94$), LH Default PFC 7 ($d = +0.78$), LH Limbic TempPole 1 ($d = +0.67$)
-- Right amygdala opposite trend: $d = -0.50$, $p = 0.13$
-- No individual ROI survives FDR ($p_{\text{FDR}} = 0.39$)
+### Top 10 Anomalous ROIs
 
-**Reliability (HC, 10 sessions)**
-- Single-session ICC: 0.06 (HC), 0.14 (MDD)
-- Split-half ICC (5 vs 5 sessions): 0.25
-- Session-one vs rest-average: $r = 0.45$
-- $2.8\times$ variance reduction from multi-session averaging
+| Rank | ROI | Network | Circuit? |
+|------|-----|---------|----------|
+| 1 | RH Default PFCdPFCm | Default Mode | ✓ |
+| 2 | LH Limbic TempPole₁ | Limbic | ✓ |
+| 3 | LH Limbic TempPole₂ | Limbic | ✓ |
+| 4 | LH Default Temp₅ | Default Mode | ✓ |
+| 5 | LH Cont Cing₂ | Frontoparietal | |
+| 6 | LH Default Par₁ | Default Mode | |
+| 7 | RH SalVentAttn FrOperIns₁ | Salience/VentAttn | |
+| 8 | NAcc-rh | Subcortical | ✓ |
+| 9 | LH Default Temp₃ | Default Mode | ✓ |
+| 10 | RH Default PFCdPFCm₃ | Default Mode | ✓ |
 
-</td>
-</tr>
-</table>
+### Coupled vs Decoupled Ablation
 
----
+| Architecture | Trainable Params | HC–MDD $d$ | Edge decoder input |
+|-------------|-----------------|-----------|-------------------|
+| **Coupled** (edge on $𝐳$) | 586 | +3.02 | $[𝐳_i \| 𝐳_j]$, dim 12 |
+| Decoupled (edge on $𝐡$) | 1,882 | +2.75 | $\|𝐡_i - 𝐡_j\|$, dim 32 |
 
-## R_SCALE Sensitivity
-
-A single hyperparameter choice — the UKF observation noise scale — determines whether the HC-MDD comparison is null or significant:
-
-| Calibration Strategy | $d$ | $p$ |
-|---------------------|-----|-----|
-| MDD group-level $R_{\text{scale}} = 0.079$ | $0.00$ | $0.999$ |
-| HC group-level $R_{\text{scale}} = 0.216$ | $0.57$ | $0.04$ |
-| Per-subject, single session | $-0.12$ | $0.70$ |
-| Per-subject, multi-session averaged | $+0.13$ | $0.68$ |
-
-Per-subject calibration resolves the ambiguity by matching each subject's noise model to their own data.
-
----
-
-## Repository Structure
-
-```
-├── MDD-HC_analysis_v4.ipynb             # Main cross-condition analysis (R kernel)
-├── R/
-│   ├── sl_models.R                       # Stuart-Landau ODE definitions
-│   ├── ukf_engine.R                      # Unscented Kalman Filter core
-│   ├── optim.R                           # Iterative & L-BFGS-B optimization
-│   ├── preprocessing.R                   # Smoothing & signal conditioning
-│   └── constants.R                       # UKF tuning constants
-├── data/
-│   ├── source/
-│   │   ├── processed rest scans/         # MDD AFNI BRIK/HEAD (rest1)
-│   │   ├── processed rest2 scans/        # MDD AFNI BRIK/HEAD (rest2)
-│   │   └── participants.tsv              # Authoritative group assignments (E#### keys)
-│   ├── HNU1/                             # HC raw NIfTI (30 subjects × 10 sessions)
-│   │   ├── 0025427/session_1..10/rest_1/
-│   │   └── ...0025456/
-│   └── parcellated/
-│       ├── 219roi/rest1/                 # MDD parcellated time series
-│       ├── 219roi/rest2/
-│       └── hc_hnu1/                      # HC parcellated time series
-├── atlases/
-│   ├── Schaefer2018_200Parcels_*.nii.gz
-│   └── Tian_Subcortex_S1_3T_2009cAsym.nii.gz
-├── img/
-│   ├── variance_reduction.png            # SD vs sessions curve
-│   ├── h1_averaged_violin.png            # HC vs MDD violin plot
-│   ├── h2_network_lollipop.png           # Network-level effect sizes
-│   ├── power_analysis.png                # Sensitivity power curve
-│   ├── method_gradient_bar.png           # Three-approach comparison
-│   ├── nf_treatment_methods.png          # Treatment effect across approaches
-│   ├── circuit_roi_effects.png           # Depression-circuit ROI lollipop
-│   ├── permutation_test.png              # Cluster test null distribution
-│   ├── icc_by_sessions.png               # ICC improvement curve
-│   ├── cross_method_scatter.png          # UKF vs spectral correlation
-│   └── rscale_sensitivity.png            # R_SCALE sensitivity analysis
-```
+Coupled architecture achieves higher separation with 3.2× fewer trainable parameters.
 
 ---
 
-## Critical Methodological Notes
+## Upstream Dependencies
 
-**Per-Subject R_SCALE Calibration** — The UKF observation noise scale is calibrated per subject to match each individual's BOLD signal variance ($R_{\text{scale}}$: HC $= 0.217 \pm 0.030$; MDD $= 0.216 \pm 0.057$; $t = 0.04$, $p = 0.97$). Without per-subject calibration, the HC-MDD comparison swings from $d = 0.00$ to $d = 0.57$ depending on which group-level value is applied — an artifact of differential noise response, not a genuine dynamical difference.
+The Hopf-GAE consumes outputs from the R biophysical pipeline ([SL-UKF_Neural_Criticality_MDD](https://github.com/skaraoglu/SL-UKF_Neural_Criticality_MDD) \&  · [SL-UKF_Neural_Criticality_MDDvsHC](https://github.com/skaraoglu/SL-UKF_Neural_Criticality_MDDvsHC)):
 
-**Atlas Affine Robustness** — NIfTI affine extraction uses a three-level fallback chain (sform → qform → manual pixdim/qoffset construction with MNI bounding-box validation) to handle inconsistent atlas headers across datasets.
-
-**Multi-Session Averaging** — HC estimates average across a mean of 9.8 sessions ($2.8\times$ SD reduction); MDD estimates average rest1 + rest2. The resulting precision asymmetry (HC SD $= 0.025$ vs MDD SD $= 0.079$) drives the high minimum detectable effect ($d = 0.94$) and the failure of TOST equivalence testing.
-
-**Distance-Based SC Approximation** — Subject-specific diffusion-weighted imaging is unavailable for either cohort. Structural connectivity is approximated by exponential distance decay ($\lambda = 40$ mm), validated against tractography in the literature. This differs from the canonical Deco framework in four respects: (i) distance-based rather than DTI-derived SC; (ii) no hemodynamic forward model; (iii) fixed $G$ rather than joint $G$-$a$ optimization; (iv) uniform rather than empirically derived intrinsic frequencies.
+| Input | File | Format |
+|-------|------|--------|
+| Bifurcation parameters | `results/v3/sl_stage1_results_216roi.csv` | CSV (one row per ROI per subject per session) |
+| PLV matrices | `results/v3/plv/plv_all_216roi.rds` | R list, keyed `"subject_id\|session"` |
+| MVAR matrices | `results/v3/s2_mvar_all_216roi.rds` | R list, keyed `"subject_id\|session"` |
+| HC comparison data | `results/ch5_v4def/ch5_v4def_results.rds` | R list |
 
 ---
 
@@ -260,70 +288,63 @@ Per-subject calibration resolves the ambiguity by matching each subject's noise 
 <tr>
 <td>
 
-**R packages**
+**Python packages**
 ```
-pracma, MASS, Matrix, dplyr,
-tidyr, ggplot2, scales, glmnet,
-igraph, parallel, zoo, psych,
-equivalence
+torch, torch_geometric,
+numpy, pandas, scipy,
+statsmodels, pyreadr,
+scikit-learn, matplotlib
 ```
 
 </td>
 <td>
 
-**Python packages**
+**Upstream (R pipeline)**
 ```
-nibabel, nilearn, numpy,
-pandas, scipy, tqdm,
-matplotlib
+pracma, MASS, Matrix,
+dplyr, tidyr, ggplot2,
+scales, glmnet, igraph,
+parallel, zoo
 ```
 
 </td>
 </tr>
 </table>
 
-**System:** R ≥ 4.2 · Python ≥ 3.9 · AFNI (MDD preprocessing only) · fMRIPrep (HC preprocessing)
+**System:** Python ≥ 3.9 · PyTorch ≥ 2.0 · PyTorch Geometric ≥ 2.4 · R ≥ 4.2 (for upstream pipeline only)
 
 ---
 
 ## Quick Start
 
 ```bash
-# 1. Clone and set up
-git clone ...
-cd ...
+# 1. Ensure upstream pipeline has been run
+# (github.com/skaraoglu/UKF-MDD)
 
-# 2. Place source data
-#    data/source/processed rest scans/      (MDD rest1 BRIK/HEAD)
-#    data/source/processed rest2 scans/     (MDD rest2 BRIK/HEAD)
-#    data/source/participants.tsv            (group assignments — CRITICAL)
-#    data/HNU1/0025427..0025456/             (HC NIfTI, 10 sessions each)
-#    atlases/Tian_Subcortex_S1_3T_2009cAsym.nii.gz
+# 2. Install Python dependencies
+pip install torch torch_geometric pyreadr scikit-learn statsmodels
 
-# 3. Parcellate HC data (~5 hours)
-jupyter execute parcellate_hc_hnu1_v3.ipynb
+# 3. Run the full pipeline
+jupyter execute main_analysis.ipynb
 
-# 4. Run cross-condition analysis (~18 hours, 71,928 UKF fits)
-jupyter execute MDD-HC_analysis_v4.ipynb
-
-# Results → results/ and img/
+# Pipeline stages:
+#   S1–S6:   Data loading, graph construction, quality control
+#   S7–S10:  Synthetic pre-training (encoder, 100 epochs)
+#   S11–S12: HC data loading + augmentation, GAE training (200 epochs)
+#   S13:     Anomaly scoring (physics-only, z-scored against HC norms)
+#   S14:     Statistical analysis (FDR, permutation tests, enrichment)
 ```
 
 ---
 
 ## Citation
 
-If you use this pipeline or build on this work, please cite the accompanying manuscript (citation block to be filled upon publication) and acknowledge the upstream data-source publications:
+If you use this architecture or build on this work, please cite:
 
-- Zotev, V. et al. (2016). Correlation between amygdala BOLD activity and frontal EEG asymmetry during real-time fMRI neurofeedback training in patients with depression. *NeuroImage: Clinical*, 11, 224–238.
-- Young, K. D. et al. (2014). Real-time fMRI neurofeedback training of amygdala activity in patients with major depressive disorder. *PLOS ONE*, 9(2), e88785.
-- Young, K. D. et al. (2017). Randomized clinical trial of real-time fMRI amygdala neurofeedback for major depressive disorder. *American Journal of Psychiatry*, 174(8), 748–755.
-- M. Misaki, K. D. Young, A. Tsuchiyagaito, J. Savitz, S. M. Guinjoan, Clinical response to neurofeedback in major depression relates to subtypes of whole-brain activation patterns during training, Molecular Psychiatry, 2025, Volume 30, Issue 6, pp. 2707-2717. DOI: 10.1038/s41380-024-02880-3.
-  
 ---
 
 <div align="center">
 
-*Built with the [Stuart-Landau](https://en.wikipedia.org/wiki/Stuart%E2%80%93Landau_equation) normal form · [Unscented Kalman Filter](https://github.com/insilico/UKF) · [SL-UKF_Neural_Criticality_MDD](https://github.com/skaraoglu/SL-UKF_Neural_Criticality_MDD) · [Schaefer 2018](https://github.com/ThomasYeoLab/CBIG/tree/master/stable_projects/brain_parcellation/Schaefer2018_LocalGlobal) + [Melbourne Subcortex](https://github.com/yetianmed/subcortex) · [HNU1/CoRR](https://fcon_1000.projects.nitrc.org/indi/CoRR/html/hnu_1.html)*
+*Built with [PyTorch Geometric](https://pyg.org/) · Node dynamics from  [SL-UKF_Neural_Criticality_MDD](https://github.com/skaraoglu/SL-UKF_Neural_Criticality_MDD) · [SL-UKF_Neural_Criticality_MDDvsHC](https://github.com/skaraoglu/SL-UKF_Neural_Criticality_MDDvsHC)· Parcellation: [Schaefer 2018](https://github.com/ThomasYeoLab/CBIG/tree/master/stable_projects/brain_parcellation/Schaefer2018_LocalGlobal) + [Melbourne Subcortex](https://github.com/yetianmed/subcortex)*
 
 </div>
